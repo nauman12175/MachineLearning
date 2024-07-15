@@ -38,7 +38,7 @@ def fetch_and_process_data():
     test_data = test_data[['DateTime', 'Particulate_Matter', 'Temp_C', 'Humidity', 'Pressure_µg/m³']]
     return test_data
 
-# Function to generate prediction data and plot
+# Function to generate prediction data and plot for a given time delta
 def generate_predictions_and_plot(num_hours):
     test_data = fetch_and_process_data()
 
@@ -94,53 +94,103 @@ def generate_predictions_and_plot(num_hours):
             "time": prediction_datetime.strftime('%H:%M:%S')
         }
 
-    # Add sensor working status
-    output["Sensor working"] = sensor_working
+    return output
 
-    # Add system accuracy (random number between 92 to 98)
-    system_accuracy = round(random.uniform(92, 98), 1)
-    output["System Accuracy"] = f"{system_accuracy:.1f}"
+# Function to generate predictions for 15 mins, 30 mins, 45 mins, and 1 hr
+def generate_predictions_for_minutes():
+    test_data = fetch_and_process_data()
 
-    # Sort output dictionary by hour
-    output = {key: output[key] for key in sorted(output.keys())}
+    # Find the latest available datetime in test_data
+    latest_datetime = test_data['DateTime'].max()
 
-    # Create a DataFrame for easier plotting
-    df = pd.DataFrame({
-        'Hour': hours,
-        'Humidity (%)': humidity,
-        'Particulate Matter (µg/m³)': particulate_matter,
-        'Pressure (hPa)': pressure,
-        'Temperature (°C)': temperature
+    # Check if data is from the last minute
+    current_time = datetime.utcnow()
+    last_data_time = test_data['DateTime'].iloc[-1]
+    sensor_working = "Yes" if (current_time - last_data_time) <= timedelta(minutes=1) else "No"
+
+    output = {}
+
+    # Predict for 15 minutes
+    prediction_datetime = latest_datetime + timedelta(minutes=15)
+    simulated_temp = test_data['Temp_C'].iloc[-1] + 0.5
+    simulated_humidity = test_data['Humidity'].iloc[-1] - 1.0
+    simulated_pressure = test_data['Pressure_µg/m³'].iloc[-1]
+    prediction_features = pd.DataFrame({
+        'Temp_C': [simulated_temp],
+        'Humidity': [simulated_humidity],
+        'Pressure_µg/m³': [simulated_pressure]
     })
+    prediction = model.predict(prediction_features)[0] / 1000
+    output["15 min"] = {
+        "date": prediction_datetime.strftime('%Y-%m-%d'),
+        "humidity": f"{simulated_humidity:.2f} %",
+        "particulate_matter": f"{prediction:.3f} µg/m³",
+        "pressure": f"{simulated_pressure:.2f} hPa",
+        "temperature": f"{simulated_temp:.2f} °C",
+        "time": prediction_datetime.strftime('%H:%M:%S')
+    }
 
-    # Plot the data
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    # Predict for 30 minutes
+    prediction_datetime = latest_datetime + timedelta(minutes=30)
+    simulated_temp = test_data['Temp_C'].iloc[-1] + 1.0
+    simulated_humidity = test_data['Humidity'].iloc[-1] - 2.0
+    simulated_pressure = test_data['Pressure_µg/m³'].iloc[-1]
+    prediction_features = pd.DataFrame({
+        'Temp_C': [simulated_temp],
+        'Humidity': [simulated_humidity],
+        'Pressure_µg/m³': [simulated_pressure]
+    })
+    prediction = model.predict(prediction_features)[0] / 1000
+    output["30 min"] = {
+        "date": prediction_datetime.strftime('%Y-%m-%d'),
+        "humidity": f"{simulated_humidity:.2f} %",
+        "particulate_matter": f"{prediction:.3f} µg/m³",
+        "pressure": f"{simulated_pressure:.2f} hPa",
+        "temperature": f"{simulated_temp:.2f} °C",
+        "time": prediction_datetime.strftime('%H:%M:%S')
+    }
 
-    ax2 = ax1.twinx()
-    ax3 = ax1.twinx()
+    # Predict for 45 minutes
+    prediction_datetime = latest_datetime + timedelta(minutes=45)
+    simulated_temp = test_data['Temp_C'].iloc[-1] + 1.5
+    simulated_humidity = test_data['Humidity'].iloc[-1] - 3.0
+    simulated_pressure = test_data['Pressure_µg/m³'].iloc[-1]
+    prediction_features = pd.DataFrame({
+        'Temp_C': [simulated_temp],
+        'Humidity': [simulated_humidity],
+        'Pressure_µg/m³': [simulated_pressure]
+    })
+    prediction = model.predict(prediction_features)[0] / 1000
+    output["45 min"] = {
+        "date": prediction_datetime.strftime('%Y-%m-%d'),
+        "humidity": f"{simulated_humidity:.2f} %",
+        "particulate_matter": f"{prediction:.3f} µg/m³",
+        "pressure": f"{simulated_pressure:.2f} hPa",
+        "temperature": f"{simulated_temp:.2f} °C",
+        "time": prediction_datetime.strftime('%H:%M:%S')
+    }
 
-    # Offset the third axis
-    ax3.spines['right'].set_position(('outward', 60))
+    # Predict for 1 hour
+    prediction_datetime = latest_datetime + timedelta(hours=1)
+    simulated_temp = test_data['Temp_C'].iloc[-1] + 2.0
+    simulated_humidity = test_data['Humidity'].iloc[-1] - 4.0
+    simulated_pressure = test_data['Pressure_µg/m³'].iloc[-1]
+    prediction_features = pd.DataFrame({
+        'Temp_C': [simulated_temp],
+        'Humidity': [simulated_humidity],
+        'Pressure_µg/m³': [simulated_pressure]
+    })
+    prediction = model.predict(prediction_features)[0] / 1000
+    output["1 hour"] = {
+        "date": prediction_datetime.strftime('%Y-%m-%d'),
+        "humidity": f"{simulated_humidity:.2f} %",
+        "particulate_matter": f"{prediction:.3f} µg/m³",
+        "pressure": f"{simulated_pressure:.2f} hPa",
+        "temperature": f"{simulated_temp:.2f} °C",
+        "time": prediction_datetime.strftime('%H:%M:%S')
+    }
 
-    df.plot(kind='line', x='Hour', y='Humidity (%)', ax=ax1, color='blue', marker='o')
-    df.plot(kind='line', x='Hour', y='Temperature (°C)', ax=ax1, color='red', marker='o')
-    df.plot(kind='line', x='Hour', y='Pressure (hPa)', ax=ax2, color='green', marker='o')
-    df.plot(kind='line', x='Hour', y='Particulate Matter (µg/m³)', ax=ax3, color='purple', marker='o')
-
-    ax1.set_xlabel('Hours')
-    ax1.set_ylabel('Humidity (%) / Temperature (°C)')
-    ax2.set_ylabel('Pressure (hPa)')
-    ax3.set_ylabel('Particulate Matter (µg/m³)')
-
-    # Set the title
-    plt.title('Environmental Factors Over Time')
-
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-
-    return output, img
+    return output
 
 # Endpoint to get all data from MongoDB
 @app.route('/data', methods=['GET'])
@@ -153,16 +203,13 @@ def get_data():
 @app.route('/predictions', methods=['GET'])
 def get_predictions():
     num_hours = 24  # Adjust as needed
-    output, img = generate_predictions_and_plot(num_hours)
+    output = generate_predictions_and_plot(num_hours)
+    return jsonify(output)
 
-    # Save the chart image to a file to serve it
-    img_path = 'environmental_factors_plot.png'
-    with open(img_path, 'wb') as f:
-        f.write(img.getbuffer())
-
-    # Add the chart link to the output
-    output['chart'] = f'/chart/{img_path}'
-
+# Endpoint to get predictions for 15 mins, 30 mins, 45 mins, and 1 hr
+@app.route('/predmin', methods=['GET'])
+def get_predictions_for_minutes():
+    output = generate_predictions_for_minutes()
     return jsonify(output)
 
 # Endpoint to serve the plot image
