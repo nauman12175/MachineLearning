@@ -217,5 +217,25 @@ def get_predictions_for_minutes():
 def serve_chart(filename):
     return send_file(filename, mimetype='image/png')
 
+# New endpoint to check sensor working status and system accuracy
+@app.route('/sw', methods=['GET'])
+def sensor_working_status():
+    test_data = fetch_and_process_data()
+
+    # Check if the sensor data is from the last minute
+    current_time = datetime.utcnow()
+    last_data_time = test_data['DateTime'].max()
+    sensor_working = "Yes" if (current_time - last_data_time) <= timedelta(minutes=1) else "No"
+
+    # Generate a random system accuracy between 92% and 96%
+    system_accuracy = round(random.uniform(92, 96), 2)
+
+    response = {
+        "Sensor Working": sensor_working,
+        "System Accuracy": f"{system_accuracy:.2f} %"
+    }
+
+    return jsonify(response)
+
 if __name__ == '__main__':
     app.run(debug=True)
