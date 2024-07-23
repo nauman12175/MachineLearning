@@ -45,11 +45,6 @@ def generate_predictions_and_plot(num_hours):
     # Find the latest available datetime in test_data
     latest_datetime = test_data['DateTime'].max()
 
-    # Check if data is from the last minute
-    current_time = datetime.utcnow()
-    last_data_time = test_data['DateTime'].iloc[-1]
-    sensor_working = "Yes" if (current_time - last_data_time) <= timedelta(minutes=1) else "No"
-
     # Generate predictions for each hour starting from the latest datetime
     output = {}
     hours = []
@@ -102,11 +97,6 @@ def generate_predictions_for_minutes():
 
     # Find the latest available datetime in test_data
     latest_datetime = test_data['DateTime'].max()
-
-    # Check if data is from the last minute
-    current_time = datetime.utcnow()
-    last_data_time = test_data['DateTime'].iloc[-1]
-    sensor_working = "Yes" if (current_time - last_data_time) <= timedelta(minutes=1) else "No"
 
     output = {}
 
