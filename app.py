@@ -2,7 +2,7 @@ from flask import Flask, jsonify, send_file
 import pymongo
 import pandas as pd
 import joblib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import matplotlib.pyplot as plt
 import io
 import random
@@ -213,9 +213,22 @@ def sensor_working_status():
     test_data = fetch_and_process_data()
 
     # Check if the sensor data is from the last minute
-    current_time = datetime.utcnow()
+    current_time = datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(hours=2)
     last_data_time = test_data['DateTime'].max()
-    sensor_working = "Yes" if (current_time - last_data_time) <= timedelta(minutes=1) else "No"
+
+    # Ensure both times are in UTC
+    if last_data_time.tzinfo is None:
+        last_data_time = last_data_time.replace(tzinfo=timezone.utc)
+    
+    time_difference = current_time - last_data_time
+    
+    # Determine if the sensor is working by checking if the last data time is within the past minute or if it's mistakenly ahead of the current time
+    sensor_working = "Yes" if (time_difference <= timedelta(minutes=1) and time_difference >= timedelta(0)) else "No"
+
+    # Debugging output
+    print(f"Current UTC time: {current_time}")
+    print(f"Last data time UTC: {last_data_time}")
+    print(f"Time difference: {time_difference}")
 
     # Generate a random system accuracy between 92% and 96%
     system_accuracy = round(random.uniform(92, 96), 2)
@@ -226,6 +239,5 @@ def sensor_working_status():
     }
 
     return jsonify(response)
-
 if __name__ == '__main__':
     app.run(debug=True)
